@@ -23,7 +23,7 @@ entries:
       artifacthub.io/operatorCapabilities: Seamless Upgrades
     apiVersion: v2
     appVersion: v26.1.4
-    created: "2026-06-26T13:03:23.135358142Z"
+    created: "2026-06-26T13:12:21.787055258Z"
     description: Redpanda operator helm chart
     digest: 2d89eb2ac8ff8fdb1205d4366dc1a90e91301240214bfc643bd3e4a2c019efff
     icon: https://go.redpanda.com/hubfs/Redpandas/operator-panda.png
@@ -53,14 +53,14 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-06-26T13:03:23.149685173Z"
+    created: "2026-06-26T13:12:21.802293916Z"
     dependencies:
     - condition: console.enabled
       name: console
       repository: file://../../console/chart
       version: '>=3.7.0-1'
     description: Redpanda is the real-time engine for modern apps.
-    digest: 197423e5dda6a727617e9713b55ff8e02455c04f47c076c00018183c08bf2516
+    digest: c852b61a98a0439407e1ddc68af44279898db9e86e4cdf600c14eb87a6c9bbdc
     icon: https://go.redpanda.com/hubfs/Redpandas/skate-stand-panda.svg
     kubeVersion: '>= 1.25.0-0'
     maintainers:
@@ -73,4 +73,4 @@ entries:
     urls:
     - https://aperiodic-io.github.io/helm-charts/redpanda-26.1.4.tgz
     version: 26.1.4
-generated: "2026-06-26T13:03:23.130501574Z"
+generated: "2026-06-26T13:12:21.781963128Z"
