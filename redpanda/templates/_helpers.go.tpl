@@ -66,10 +66,7 @@
 {{- if (eq $tag "") -}}
 {{- $tag = $state.Chart.AppVersion -}}
 {{- end -}}
-{{- $pattern := "^v(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$" -}}
-{{- if (not (regexMatch $pattern $tag)) -}}
-{{- $_ := (fail "image.tag must start with a 'v' and be a valid semver") -}}
-{{- end -}}
+{{/* semver validation removed — custom image tags allowed */}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $tag) | toJson -}}
 {{- break -}}
@@ -271,6 +268,11 @@
 {{- $result := false -}}
 {{- if (regexMatch "^[0-9]" $version) -}}
 {{- $result = (semverCompare $constraint $version) -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $result) | toJson -}}
+{{- break -}}
+{{- end -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $result) | toJson -}}

@@ -11,7 +11,7 @@ annotations:
     - name: "Helm (>= 3.10.0)"
       url: https://helm.sh/docs/intro/install/
 apiVersion: v2
-appVersion: v26.1.8-patched
+appVersion: v26.1.8
 dependencies:
 - condition: console.enabled
   name: console
