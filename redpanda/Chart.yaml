@@ -11,7 +11,7 @@ annotations:
     - name: "Helm (>= 3.10.0)"
       url: https://helm.sh/docs/intro/install/
 apiVersion: v2
-appVersion: v26.1.8
+appVersion: v26.1.8-patched
 dependencies:
 - condition: console.enabled
   name: console
@@ -27,4 +27,4 @@ name: redpanda
 sources:
 - https://github.com/redpanda-data/redpanda-operator/tree/main/charts/redpanda
 type: application
-version: 26.1.4
+version: 26.1.5

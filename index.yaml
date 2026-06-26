@@ -23,7 +23,7 @@ entries:
       artifacthub.io/operatorCapabilities: Seamless Upgrades
     apiVersion: v2
     appVersion: v26.1.4
-    created: "2026-06-26T13:36:40.343421024Z"
+    created: "2026-06-26T13:37:51.475601162Z"
     description: Redpanda operator helm chart
     digest: 2d89eb2ac8ff8fdb1205d4366dc1a90e91301240214bfc643bd3e4a2c019efff
     icon: https://go.redpanda.com/hubfs/Redpandas/operator-panda.png
@@ -52,8 +52,42 @@ entries:
         - name: "Helm (>= 3.10.0)"
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
+    appVersion: v26.1.8-patched
+    created: "2026-06-26T13:37:51.533287977Z"
+    dependencies:
+    - condition: console.enabled
+      name: console
+      repository: file://../../console/chart
+      version: '>=3.7.0-1'
+    description: Redpanda is the real-time engine for modern apps.
+    digest: aff6414c6cf80df24ea02d7c1683d29757a953504654adec575627c26c6a8c9b
+    icon: https://go.redpanda.com/hubfs/Redpandas/skate-stand-panda.svg
+    kubeVersion: '>= 1.25.0-0'
+    maintainers:
+    - name: redpanda-data
+      url: https://github.com/orgs/redpanda-data/people
+    name: redpanda
+    sources:
+    - https://github.com/redpanda-data/redpanda-operator/tree/main/charts/redpanda
+    type: application
+    urls:
+    - https://raw.githubusercontent.com/aperiodic-io/helm-charts/main/redpanda-26.1.5.tgz
+    version: 26.1.5
+  - annotations:
+      artifacthub.io/images: |
+        - name: redpanda
+          image: docker.redpanda.com/redpandadata/redpanda:v26.1.8
+        - name: busybox
+          image: busybox:latest
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/links: |
+        - name: Documentation
+          url: https://docs.redpanda.com
+        - name: "Helm (>= 3.10.0)"
+          url: https://helm.sh/docs/intro/install/
+    apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-06-26T13:36:40.362085783Z"
+    created: "2026-06-26T13:37:51.48767689Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -87,7 +121,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-06-26T13:36:40.374499393Z"
+    created: "2026-06-26T13:37:51.499149931Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -121,7 +155,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-06-26T13:36:40.388290071Z"
+    created: "2026-06-26T13:37:51.512265084Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -155,7 +189,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-06-26T13:36:40.403390369Z"
+    created: "2026-06-26T13:37:51.51938034Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -175,4 +209,4 @@ entries:
     urls:
     - https://raw.githubusercontent.com/aperiodic-io/helm-charts/main/redpanda-26.1.4.tgz
     version: 26.1.4
-generated: "2026-06-26T13:36:40.339505907Z"
+generated: "2026-06-26T13:37:51.471329388Z"
