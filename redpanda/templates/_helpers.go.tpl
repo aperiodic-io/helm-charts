@@ -274,11 +274,6 @@
 {{- break -}}
 {{- end -}}
 {{- end -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" $result) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
 
 {{- define "redpanda.cleanForK8s" -}}
 {{- $in := (index .a 0) -}}
