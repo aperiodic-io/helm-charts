@@ -66,7 +66,7 @@
 {{- if (eq $tag "") -}}
 {{- $tag = $state.Chart.AppVersion -}}
 {{- end -}}
-{{/* semver validation removed — custom image tags allowed */}}
+{{/* semver validation removed */}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $tag) | toJson -}}
 {{- break -}}

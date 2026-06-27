@@ -23,7 +23,7 @@ entries:
       artifacthub.io/operatorCapabilities: Seamless Upgrades
     apiVersion: v2
     appVersion: v26.1.4
-    created: "2026-06-27T08:48:39.462912031Z"
+    created: "2026-06-27T12:01:11.898531081Z"
     description: Redpanda operator helm chart
     digest: 2d89eb2ac8ff8fdb1205d4366dc1a90e91301240214bfc643bd3e4a2c019efff
     icon: https://go.redpanda.com/hubfs/Redpandas/operator-panda.png
@@ -53,7 +53,41 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8-patched
-    created: "2026-06-27T08:48:39.52680972Z"
+    created: "2026-06-27T12:01:11.966058654Z"
+    dependencies:
+    - condition: console.enabled
+      name: console
+      repository: file://../../console/chart
+      version: '>=3.7.0-1'
+    description: Redpanda is the real-time engine for modern apps.
+    digest: 98fb68ae4d488fe24844c7256db81cfe44ac455f57fb8050bb30f55914662441
+    icon: https://go.redpanda.com/hubfs/Redpandas/skate-stand-panda.svg
+    kubeVersion: '>= 1.25.0-0'
+    maintainers:
+    - name: redpanda-data
+      url: https://github.com/orgs/redpanda-data/people
+    name: redpanda
+    sources:
+    - https://github.com/redpanda-data/redpanda-operator/tree/main/charts/redpanda
+    type: application
+    urls:
+    - https://raw.githubusercontent.com/aperiodic-io/helm-charts/main/redpanda-26.1.14.tgz
+    version: 26.1.14
+  - annotations:
+      artifacthub.io/images: |
+        - name: redpanda
+          image: docker.redpanda.com/redpandadata/redpanda:v26.1.8
+        - name: busybox
+          image: busybox:latest
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/links: |
+        - name: Documentation
+          url: https://docs.redpanda.com
+        - name: "Helm (>= 3.10.0)"
+          url: https://helm.sh/docs/intro/install/
+    apiVersion: v2
+    appVersion: v26.1.8-patched
+    created: "2026-06-27T12:01:11.953366483Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -87,7 +121,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8-patched
-    created: "2026-06-27T08:48:39.51053023Z"
+    created: "2026-06-27T12:01:11.943008792Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -121,7 +155,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8-patched
-    created: "2026-06-27T08:48:39.493302634Z"
+    created: "2026-06-27T12:01:11.927187195Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -155,7 +189,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8-patched
-    created: "2026-06-27T08:48:39.480354979Z"
+    created: "2026-06-27T12:01:11.912182026Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -189,7 +223,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8-patched
-    created: "2026-06-27T08:48:39.674295552Z"
+    created: "2026-06-27T12:01:12.067053582Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -223,7 +257,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8-patched
-    created: "2026-06-27T08:48:39.658413044Z"
+    created: "2026-06-27T12:01:12.053501742Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -257,7 +291,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8-patched
-    created: "2026-06-27T08:48:39.640242825Z"
+    created: "2026-06-27T12:01:12.043159219Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -291,7 +325,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8-patched
-    created: "2026-06-27T08:48:39.624914754Z"
+    created: "2026-06-27T12:01:12.034576138Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -325,7 +359,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-06-27T08:48:39.605574145Z"
+    created: "2026-06-27T12:01:12.027456084Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -359,7 +393,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-06-27T08:48:39.684737416Z"
+    created: "2026-06-27T12:01:12.081521686Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -393,7 +427,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-06-27T08:48:39.592184132Z"
+    created: "2026-06-27T12:01:12.018959726Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -427,7 +461,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-06-27T08:48:39.575167813Z"
+    created: "2026-06-27T12:01:12.008408611Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -461,7 +495,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-06-27T08:48:39.561818576Z"
+    created: "2026-06-27T12:01:11.996588312Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -495,7 +529,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-06-27T08:48:39.543498486Z"
+    created: "2026-06-27T12:01:11.98049641Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -515,4 +549,4 @@ entries:
     urls:
     - https://raw.githubusercontent.com/aperiodic-io/helm-charts/main/redpanda-26.1.4-fixed.tgz
     version: 26.1.4
-generated: "2026-06-27T08:48:39.457056933Z"
+generated: "2026-06-27T12:01:11.892971237Z"
