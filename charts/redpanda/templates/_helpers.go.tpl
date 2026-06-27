@@ -66,7 +66,7 @@
 {{- if (eq $tag "") -}}
 {{- $tag = $state.Chart.AppVersion -}}
 {{- end -}}
-{{/* semver validation removed — custom image tags allowed */}}
+{{/* semver validation removed */}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $tag) | toJson -}}
 {{- break -}}
@@ -263,12 +263,11 @@
 {{- $constraint := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $version := (trimPrefix "v" (get (fromJson (include "redpanda.Tag" (dict "a" (list $state)))) "r")) -}}
-{{- $_277_result_err := (list (semverCompare $constraint $version) nil) -}}
-{{- $result := (index $_277_result_err 0) -}}
-{{- $err := (index $_277_result_err 1) -}}
-{{- if (ne (toJson $err) "null") -}}
-{{- $_ := (fail $err) -}}
+{{- $rawTag := (get (fromJson (include "redpanda.Tag" (dict "a" (list $state)))) "r") -}}
+{{- $version := (trimPrefix "v" $rawTag) -}}
+{{- $result := true -}}
+{{- if (regexMatch "^[0-9]+\\.[0-9]+" $version) -}}
+{{- $result = (semverCompare $constraint $version) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $result) | toJson -}}

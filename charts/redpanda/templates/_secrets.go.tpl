@@ -187,7 +187,7 @@ echo "passed"`) -}}
 {{- $_is_returning := false -}}
 {{- $secret := (mustMergeOverwrite (dict "metadata" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (printf "%.51s-configurator" (printf "%s%s" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.Pool.Suffix" (dict "a" (list (deepCopy $pool))))) "r"))) "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r"))) "type" "Opaque" "stringData" (dict))) -}}
 {{- $configuratorSh := (list) -}}
-{{- $configuratorSh = (concat (default (list) $configuratorSh) (list `set -xe` `SERVICE_NAME=$1` `KUBERNETES_NODE_NAME=$2` `POD_ORDINAL=${SERVICE_NAME##*-}` "BROKER_INDEX=`expr $POD_ORDINAL + 1`" `` `CONFIG=/etc/redpanda/redpanda.yaml` `` `# Setup config files` `cp /tmp/base-config/redpanda.yaml "${CONFIG}"`)) -}}
+{{- $configuratorSh = (concat (default (list) $configuratorSh) (list `set -xe` `SERVICE_NAME=$1` `KUBERNETES_NODE_NAME=$2` `POD_ORDINAL=${SERVICE_NAME##*-}` "BROKER_INDEX=$(($POD_ORDINAL + 1))" `` `CONFIG=/etc/redpanda/redpanda.yaml` `` `# Setup config files` `cp /tmp/base-config/redpanda.yaml "${CONFIG}"`)) -}}
 {{- if (not (get (fromJson (include "redpanda.RedpandaAtLeast_22_3_0" (dict "a" (list $state)))) "r")) -}}
 {{- $configuratorSh = (concat (default (list) $configuratorSh) (list `` `# Configure bootstrap` `## Not used for Redpanda v22.3.0+` `rpk --config "${CONFIG}" redpanda config set redpanda.node_id "${POD_ORDINAL}"` `if [ "${POD_ORDINAL}" = "0" ]; then` `	rpk --config "${CONFIG}" redpanda config set redpanda.seed_servers '[]' --format yaml` `fi`)) -}}
 {{- end -}}
@@ -220,7 +220,6 @@ echo "passed"`) -}}
 {{- $externalCounter := (0 | int) -}}
 {{- range $externalName, $externalVals := $state.Values.listeners.kafka.external -}}
 {{- $externalCounter = ((add $externalCounter (1 | int)) | int) -}}
-{{- $snippet = (concat (default (list) $snippet) (list `` (printf `ADVERTISED_%s_ADDRESSES=()` (upper $listenerName)))) -}}
 {{- range $_, $replicaIndex := (until (($sts.replicas | int) | int)) -}}
 {{- $port := ($externalVals.port | int) -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $externalVals.advertisedPorts)))) "r") | int) (0 | int)) -}}
@@ -236,12 +235,12 @@ echo "passed"`) -}}
 {{- if (eq $prefixTemplate "") -}}
 {{- $prefixTemplate = (default "" $state.Values.external.prefixTemplate) -}}
 {{- end -}}
-{{- $snippet = (concat (default (list) $snippet) (list `` (printf `PREFIX_TEMPLATE=%s` (quote $prefixTemplate)) (printf `ADVERTISED_%s_ADDRESSES+=(%s)` (upper $listenerName) (quote $address)))) -}}
+{{- $snippet = (concat (default (list) $snippet) (list `` (printf `PREFIX_TEMPLATE=%s` (quote $prefixTemplate)) (printf `ADVERTISED_%s_ADDRESSES_%d=%s` (upper $listenerName) $replicaIndex (quote $address)))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- $snippet = (concat (default (list) $snippet) (list `` (printf `rpk redpanda config --config "$CONFIG" set %s.advertised_%s_api[%d] "${ADVERTISED_%s_ADDRESSES[$POD_ORDINAL]}"` $redpandaConfigPart $listenerAdvertisedName $externalCounter (upper $listenerName)))) -}}
+{{- $snippet = (concat (default (list) $snippet) (list `` (printf `rpk redpanda config --config "$CONFIG" set %s.advertised_%s_api[%d] "$(eval echo \$ADVERTISED_%s_ADDRESSES_$POD_ORDINAL)"` $redpandaConfigPart $listenerAdvertisedName $externalCounter (upper $listenerName)))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -268,7 +267,6 @@ echo "passed"`) -}}
 {{- $externalCounter := (0 | int) -}}
 {{- range $externalName, $externalVals := $state.Values.listeners.http.external -}}
 {{- $externalCounter = ((add $externalCounter (1 | int)) | int) -}}
-{{- $snippet = (concat (default (list) $snippet) (list `` (printf `ADVERTISED_%s_ADDRESSES=()` (upper $listenerName)))) -}}
 {{- range $_, $replicaIndex := (until (($sts.replicas | int) | int)) -}}
 {{- $port := ($externalVals.port | int) -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $externalVals.advertisedPorts)))) "r") | int) (0 | int)) -}}
@@ -284,12 +282,12 @@ echo "passed"`) -}}
 {{- if (eq $prefixTemplate "") -}}
 {{- $prefixTemplate = (default "" $state.Values.external.prefixTemplate) -}}
 {{- end -}}
-{{- $snippet = (concat (default (list) $snippet) (list `` (printf `PREFIX_TEMPLATE=%s` (quote $prefixTemplate)) (printf `ADVERTISED_%s_ADDRESSES+=(%s)` (upper $listenerName) (quote $address)))) -}}
+{{- $snippet = (concat (default (list) $snippet) (list `` (printf `PREFIX_TEMPLATE=%s` (quote $prefixTemplate)) (printf `ADVERTISED_%s_ADDRESSES_%d=%s` (upper $listenerName) $replicaIndex (quote $address)))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- $snippet = (concat (default (list) $snippet) (list `` (printf `rpk redpanda config --config "$CONFIG" set %s.advertised_%s_api[%d] "${ADVERTISED_%s_ADDRESSES[$POD_ORDINAL]}"` $redpandaConfigPart $listenerAdvertisedName $externalCounter (upper $listenerName)))) -}}
+{{- $snippet = (concat (default (list) $snippet) (list `` (printf `rpk redpanda config --config "$CONFIG" set %s.advertised_%s_api[%d] "$(eval echo \$ADVERTISED_%s_ADDRESSES_$POD_ORDINAL)"` $redpandaConfigPart $listenerAdvertisedName $externalCounter (upper $listenerName)))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
