@@ -266,7 +266,7 @@
 {{- $rawTag := (get (fromJson (include "redpanda.Tag" (dict "a" (list $state)))) "r") -}}
 {{- $version := (trimPrefix "v" $rawTag) -}}
 {{- $result := true -}}
-{{- if (regexMatch "^[0-9]" $version) -}}
+{{- if (regexMatch "^[0-9]+\\.[0-9]+" $version) -}}
 {{- $result = (semverCompare $constraint $version) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
