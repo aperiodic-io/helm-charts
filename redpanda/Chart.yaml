@@ -27,4 +27,4 @@ name: redpanda
 sources:
 - https://github.com/redpanda-data/redpanda-operator/tree/main/charts/redpanda
 type: application
-version: 26.1.12
+version: 26.1.13
