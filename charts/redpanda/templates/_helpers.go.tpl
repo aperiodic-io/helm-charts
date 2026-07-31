@@ -66,7 +66,7 @@
 {{- if (eq $tag "") -}}
 {{- $tag = $state.Chart.AppVersion -}}
 {{- end -}}
-{{/* semver validation removed */}}
+{{/* Aperiodic deploys immutable SHA-tagged Redpanda images. */}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $tag) | toJson -}}
 {{- break -}}
@@ -507,4 +507,3 @@
 {{- break -}}
 {{- end -}}
 {{- end -}}
-
