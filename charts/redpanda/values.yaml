@@ -298,6 +298,25 @@ external:
   # externalDns:
   #   enabled: true
   # prefixTemplate: ""
+  # -- Gateway API TLSRoute-based external access (alternative to NodePort/LoadBalancer).
+  # The chart creates a bootstrap TLSRoute plus one per-broker TLSRoute, routed by SNI
+  # through a Gateway you manage. Opt individual listeners in by setting their type:
+  # `listeners.<service>.external.<name>.type: tlsroute` (see listeners.kafka.external below).
+  # The Gateway itself is NOT created by the chart; reference it via parentRefs.
+  # gateway:
+  #   # Activates Gateway API TLSRoute mode. Takes precedence over external.type.
+  #   enabled: false
+  #   # Gateway(s) that handle the TLSRoutes. Passed directly into each TLSRoute's
+  #   # spec.parentRefs. At least one entry is required when enabled.
+  #   parentRefs:
+  #     - name: redpanda-gateway      # required: name of the Gateway
+  #       sectionName: kafka          # optional: Gateway listener section to attach to
+  #       # namespace: rp-gw          # optional: defaults to the TLSRoute's namespace
+  #       # kind: Gateway             # optional: defaults to "Gateway"
+  #       # group: gateway.networking.k8s.io  # optional: default API group
+  #   # Port advertised to clients in broker metadata. Defaults to 443. The actual
+  #   # listening port is configured on the Gateway, not on the TLSRoute.
+  #   advertisedPort: 9094
 
 # -- Log-level settings.
 logging:
@@ -580,6 +599,15 @@ statefulset:
   replicas: 3
   updateStrategy:
     type: RollingUpdate
+  # -- Controls the lifecycle of PersistentVolumeClaims created from the StatefulSet's
+  # volume claim templates. Defaults match the Kubernetes default (`Retain` for both fields):
+  # PVCs are kept when brokers are scaled down or when the StatefulSet is deleted. Set
+  # `whenScaled: Delete` to delete a broker's PVC when it is decommissioned via scale-down,
+  # and `whenDeleted: Delete` to delete all PVCs when the StatefulSet itself is deleted.
+  # Valid values: `Retain`, `Delete`.
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   budget:
     maxUnavailable: 1
   # -- Additional labels to be added to statefulset label selector.
@@ -669,7 +697,7 @@ statefulset:
     custom: {}
   sideCars:
     image:
-      tag: v26.1.4
+      tag: v26.2.1
       repository: docker.redpanda.com/redpandadata/redpanda-operator
     # Additional arguments to pass to the sidecar command. Reserved for internal testing.
     # @ignored
@@ -678,8 +706,15 @@ statefulset:
     # such as `local` or `hostPath`, are used. It does so by monitoring redpanda Pods that are in a "Pending" state for at least the period
     # specified by `unbindAfter`. After this period it will delete the Pod's PVC to re-trigger volume provisioning.
     pvcUnbinder:
+      # -- Enables the PVCUnbinder sidecar controller. Note: with `rbac.enabled`, this renders a
+      # ClusterRole that grants the Pod's ServiceAccount cluster-wide read access to Nodes,
+      # regardless of the other pvcUnbinder settings.
       enabled: false
       unbindAfter: 60s
+      # -- Renders `--disable-pvc-rebinding-gate-exemption`: turns off the pvc-rebinding gate's
+      # stuck-claim exemption (an escape hatch if its proof chain misfires in your environment)
+      # while keeping the rest of the PVCUnbinder running.
+      disableStuckClaimExemption: false
     # The BrokerDecommissioner attempts to decommission brokers that have been non-gracefully terminated in a cluster due to something
     # like a Node crash. When a broker is determined to no longer be valid (i.e. it has been replaced by a broker with a different id)
     # the decommissioner reaches out to the deployed cluster and begins a decommission operation after detecting the broker as invalid
@@ -690,6 +725,11 @@ statefulset:
       decommissionAfter: 60s
       decommissionRequeueTimeout: 10s
     configWatcher:
+      enabled: true
+    # -- Keeps the in-pod rpk configuration fresh after node operations
+    # (scale, NodePool swap) without a pod restart (K8S-755). Enabled by
+    # default; set to false as a kill switch.
+    rpkProfileWatcher:
       enabled: true
     controllers:
       enabled: false
@@ -778,7 +818,8 @@ tuning:
   # Some valid values are "gcp:c2-standard-16:nvme", "aws:i3.xlarge:default"
   # well_known_io: ""
   #
-  # The following tuning parameters must be false in container environments and will be ignored:
+  # Unless `apply_host_tuners` is enabled (see below), the following tuning parameters
+  # must be false in container environments and will be ignored:
   #   tune_network
   #   tune_disk_scheduler
   #   tune_disk_nomerges
@@ -787,6 +828,29 @@ tuning:
   #   tune_cpu
   #   tune_swappiness
   #   tune_transparent_hugepages
+  #
+  # Opt-in host tuning. When true, the tuning init container (still gated on
+  # `tune_aio_events`, which must remain true) chroots into the host filesystem and runs
+  # `rpk redpanda tune all` in the host's network namespace, so tuners that need the
+  # host's /sys, /proc, NICs, and block devices actually apply. Enabling it
+  # default-enables tune_disk_irq, tune_disk_scheduler, tune_disk_nomerges, tune_network,
+  # tune_fstrim, tune_disk_write_cache (GCP-only; skipped elsewhere), and tune_cpu — an
+  # explicit `config.rpk.tune_*: false` overrides any of these defaults.
+  #
+  # Security requirements: the tuning init container runs privileged (as with
+  # `tune_aio_events`) and additionally mounts twelve hostPath volumes (/bin, /sbin,
+  # /usr, /lib, /lib64 read-only; /sys, /proc, /etc, /dev, /var, /run writable; plus the
+  # tuner state file under /var/run). On Pod Security Admission clusters the namespace
+  # needs the `privileged` level; on OpenShift the pod's ServiceAccount needs an SCC
+  # allowing hostPath volumes and privileged containers (the built-in `privileged` SCC
+  # works).
+  #
+  # Constraints: run at most one Redpanda pod per node (the chart's default
+  # anti-affinity) — concurrent tuners race on the same kernel parameters. Disabling
+  # this flag or uninstalling the chart does not revert tuning already applied to a
+  # node: sysctl/IRQ/block-device settings persist until reboot, and the fstrim systemd
+  # timer rpk installs on the host keeps firing until removed.
+  # apply_host_tuners: false
   #   tune_coredump
 
 
@@ -852,6 +916,18 @@ listeners:
           cert: external
         # default is "sasl"
         authenticationMethod:
+        # -- External access type for this listener. Unset inherits the cluster-wide
+        # external.type (NodePort/LoadBalancer). Set to "tlsroute" to route this listener
+        # via Gateway API (requires external.gateway above): a bootstrap + per-broker
+        # TLSRoute is created and the listener is excluded from the NodePort/LoadBalancer
+        # service. Other listeners can stay on the conventional type, enabling gradual migration.
+        # type: tlsroute
+        # -- SNI hostname for the bootstrap TLSRoute (requires type: tlsroute).
+        # host: redpanda.example.com
+        # -- Template for per-broker TLSRoute SNI hostnames (requires type: tlsroute).
+        # Variables: $POD_ORDINAL, $POD_NAME. The broker advertises this same hostname,
+        # so the SNI the client reconnects on matches what the Gateway routes by.
+        # hostTemplate: redpanda-$POD_ORDINAL-broker.example.com
   # -- RPC listener (this is never externally accessible).
   rpc:
     port: 33145

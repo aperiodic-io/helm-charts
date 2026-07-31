@@ -3,7 +3,7 @@
 description: Find the default values and descriptions of settings in the Redpanda Console Helm chart.
 ---
 
-![Version: 3.7.1](https://img.shields.io/badge/Version-3.7.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v3.7.3](https://img.shields.io/badge/AppVersion-v3.7.3-informational?style=flat-square)
+![Version: 3.9.0](https://img.shields.io/badge/Version-3.9.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v3.9.0](https://img.shields.io/badge/AppVersion-v3.9.0-informational?style=flat-square)
 
 This page describes the official Redpanda Console Helm Chart. In particular, this page describes the contents of the chart’s [`values.yaml` file](https://github.com/redpanda-data/helm-charts/blob/main/charts/console/values.yaml).
 Each of the settings is listed and described on this page, along with any default values.
@@ -116,6 +116,28 @@ Add additional volumes, such as for TLS keys.
 Override `console.fullname` template.
 
 **Default:** `""`
+
+### [gateway](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=gateway)
+
+Gateway API `HTTPRoute` settings.
+
+**Default:**
+
+```
+{"annotations":{},"enabled":false,"hostnames":["chart-example.local"],"parentRefs":[],"path":"/","pathType":"PathPrefix"}
+```
+
+### [gateway.parentRefs](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=gateway.parentRefs)
+
+Gateway parent references for this route. If no parentRefs are specified, the HTTPRoute is still rendered but will not attach to any Gateway until configured.
+
+**Default:** `[]`
+
+### [gateway.pathType](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=gateway.pathType)
+
+One of Exact, PathPrefix, or RegularExpression.
+
+**Default:** `"PathPrefix"`
 
 ### [image](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=image)
 

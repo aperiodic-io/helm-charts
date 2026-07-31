@@ -3,7 +3,7 @@
 description: Find the default values and descriptions of settings in the Redpanda Helm chart.
 ---
 
-![Version: 26.1.4](https://img.shields.io/badge/Version-26.1.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v26.1.8](https://img.shields.io/badge/AppVersion-v26.1.8-informational?style=flat-square)
+![Version: 26.2.1](https://img.shields.io/badge/Version-26.2.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v26.2.1](https://img.shields.io/badge/AppVersion-v26.2.1-informational?style=flat-square)
 
 This page describes the official Redpanda Helm Chart. In particular, this page describes the contents of the chart’s [`values.yaml` file](https://github.com/redpanda-data/helm-charts/blob/main/charts/redpanda/chart/values.yaml). Each of the settings is listed and described on this page, along with any default values.
 
@@ -22,7 +22,7 @@ Kubernetes: `>= 1.25.0-0`
 
 | Repository | Name | Version |
 |------------|------|---------|
-| file://../../console/chart | console | >=3.7.0-1 |
+| file://../../console/chart | console | >=3.9.0-0 |
 
 ## Settings
 
@@ -751,6 +751,16 @@ In environments where root is not allowed, you cannot change the ownership of fi
 
 **Default:** `false`
 
+### [statefulset.persistentVolumeClaimRetentionPolicy](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.persistentVolumeClaimRetentionPolicy)
+
+Controls the lifecycle of PersistentVolumeClaims created from the StatefulSet's volume claim templates. Defaults match the Kubernetes default (`Retain` for both fields): PVCs are kept when brokers are scaled down or when the StatefulSet is deleted. Set `whenScaled: Delete` to delete a broker's PVC when it is decommissioned via scale-down, and `whenDeleted: Delete` to delete all PVCs when the StatefulSet itself is deleted. Valid values: `Retain`, `Delete`.
+
+**Default:**
+
+```
+{"whenDeleted":"Retain","whenScaled":"Retain"}
+```
+
 ### [statefulset.podAntiAffinity.custom](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.podAntiAffinity.custom)
 
 Change `podAntiAffinity.type` to `custom` and provide your own podAntiAffinity rules here.
@@ -881,15 +891,29 @@ DEPRECATED: Please use statefulset.sideCars.brokerDecommissioner and statefulset
 
 ### [statefulset.sideCars.image.tag](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.image.tag)
 
-**Default:** `"v26.1.4"`
+**Default:** `"v26.2.1"`
+
+### [statefulset.sideCars.pvcUnbinder.disableStuckClaimExemption](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.pvcUnbinder.disableStuckClaimExemption)
+
+Renders `--disable-pvc-rebinding-gate-exemption`: turns off the pvc-rebinding gate's stuck-claim exemption (an escape hatch if its proof chain misfires in your environment) while keeping the rest of the PVCUnbinder running.
+
+**Default:** `false`
 
 ### [statefulset.sideCars.pvcUnbinder.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.pvcUnbinder.enabled)
+
+Enables the PVCUnbinder sidecar controller. Note: with `rbac.enabled`, this renders a ClusterRole that grants the Pod's ServiceAccount cluster-wide read access to Nodes, regardless of the other pvcUnbinder settings.
 
 **Default:** `false`
 
 ### [statefulset.sideCars.pvcUnbinder.unbindAfter](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.pvcUnbinder.unbindAfter)
 
 **Default:** `"60s"`
+
+### [statefulset.sideCars.rpkProfileWatcher](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.rpkProfileWatcher)
+
+Keeps the in-pod rpk configuration fresh after node operations (scale, NodePool swap) without a pod restart (K8S-755). Enabled by default; set to false as a kill switch.
+
+**Default:** `{"enabled":true}`
 
 ### [statefulset.updateStrategy.type](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.updateStrategy.type)
 

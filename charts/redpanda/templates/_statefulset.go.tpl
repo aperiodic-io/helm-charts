@@ -86,8 +86,32 @@
 {{- $volumes = (concat (default (list) $volumes) (list $v_2)) -}}
 {{- end -}}
 {{- $volumes = (concat (default (list) $volumes) (list (get (fromJson (include "redpanda.kubeTokenAPIVolume" (dict "a" (list "kube-api-access")))) "r"))) -}}
+{{- if (and $state.Values.tuning.tune_aio_events $state.Values.tuning.apply_host_tuners) -}}
+{{- $volumes = (concat (default (list) $volumes) (default (list) (get (fromJson (include "redpanda.HostTunerVolumes" (dict "a" (list)))) "r"))) -}}
+{{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $volumes) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "redpanda.HostTunerVolumes" -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $vols := (list) -}}
+{{- range $_, $dir := (get (fromJson (include "redpanda.HostTunerDirs" (dict "a" (list)))) "r") -}}
+{{- $hostPathType := "Directory" -}}
+{{- if (eq $dir "lib64") -}}
+{{- $hostPathType = "DirectoryOrCreate" -}}
+{{- end -}}
+{{- $vols = (concat (default (list) $vols) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "hostPath" (mustMergeOverwrite (dict "path" "") (dict "path" (printf "/%s" $dir) "type" $hostPathType)))) (dict "name" (printf "host-%s" $dir))))) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $vols = (concat (default (list) $vols) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "hostPath" (mustMergeOverwrite (dict "path" "") (dict "path" "/var/run/redpanda_node_tuner_state.yaml" "type" "FileOrCreate")))) (dict "name" "host-tuner-state")))) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $vols) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -154,6 +178,9 @@
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list (get (fromJson (include "redpanda.Listeners.TrustStores" (dict "a" (list $state.Values.listeners $state.Values.tls)))) "r"))))) "r") | int) (0 | int)) -}}
 {{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "truststores" "mountPath" "/etc/truststores" "readOnly" true)))) -}}
 {{- end -}}
+{{- if (and $state.Values.tuning.tune_aio_events $state.Values.tuning.apply_host_tuners) -}}
+{{- $mounts = (concat (default (list) $mounts) (list (get (fromJson (include "redpanda.HostTunerStateVolumeMount" (dict "a" (list)))) "r"))) -}}
+{{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $mounts) | toJson -}}
 {{- break -}}
@@ -190,6 +217,15 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "redpanda.HostTunerDirs" -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (list "bin" "sbin" "sys" "proc" "etc" "usr" "lib" "lib64" "dev" "var" "run")) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "redpanda.statefulSetInitContainerTuning" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
@@ -199,8 +235,82 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
+{{- if $state.Values.tuning.apply_host_tuners -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (get (fromJson (include "redpanda.statefulSetInitContainerTuningOnHost" (dict "a" (list $state)))) "r")) | toJson -}}
+{{- break -}}
+{{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "tuning" "image" (printf "%s:%s" $state.Values.image.repository (get (fromJson (include "redpanda.Tag" (dict "a" (list $state)))) "r")) "command" (list `/bin/bash` `-c` `rpk redpanda tune all`) "securityContext" (mustMergeOverwrite (dict) (dict "capabilities" (mustMergeOverwrite (dict) (dict "add" (list `SYS_RESOURCE`))) "privileged" true "runAsNonRoot" false "runAsUser" ((0 | int64) | int64) "runAsGroup" ((0 | int64) | int64))) "volumeMounts" (concat (default (list) (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $state)))) "r")) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "base-config" "mountPath" "/etc/redpanda")) (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" `datadir` "mountPath" `/var/lib/redpanda/data`))))))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "redpanda.statefulSetInitContainerTuningOnHost" -}}
+{{- $state := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "tuning" "image" (printf "%s:%s" $state.Values.image.repository (get (fromJson (include "redpanda.Tag" (dict "a" (list $state)))) "r")) "command" (list `/bin/bash` `-c` (get (fromJson (include "redpanda.HostTunerScript" (dict "a" (list)))) "r")) "securityContext" (mustMergeOverwrite (dict) (dict "privileged" true "runAsNonRoot" false "runAsUser" ((0 | int64) | int64) "runAsGroup" ((0 | int64) | int64))) "volumeMounts" (get (fromJson (include "redpanda.HostTunerVolumeMounts" (dict "a" (list)))) "r")))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "redpanda.HostTunerVolumeMounts" -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $readOnlyDirs := (dict "bin" true "sbin" true "usr" true "lib" true "lib64" true) -}}
+{{- $mounts := (list) -}}
+{{- range $_, $dir := (get (fromJson (include "redpanda.HostTunerDirs" (dict "a" (list)))) "r") -}}
+{{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" (printf "host-%s" $dir) "mountPath" (printf "/host/%s" $dir) "readOnly" (ternary (index $readOnlyDirs $dir) false (hasKey $readOnlyDirs $dir)) "mountPropagation" "HostToContainer")))) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "base-config" "mountPath" "/host/redpanda_etc")) (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "datadir" "mountPath" "/host/var/lib/redpanda/data")))) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $mounts) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "redpanda.HostTunerStateVolumeMount" -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "host-tuner-state" "mountPath" "/var/run/redpanda_node_tuner_state.yaml" "readOnly" true))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "redpanda.HostTunerScript" -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" `set -xeuo pipefail
+umask 077
+mkdir -p /host/opt/redpanda
+mount --bind /opt/redpanda /host/opt/redpanda
+printf '#!/bin/sh\ncommand -v "$@"\n' > /opt/redpanda/bin/which
+chmod +x /opt/redpanda/bin/which
+chroot /host /bin/bash -c 'true' || { echo "FATAL: cannot exec /bin/bash inside the /host chroot; this node's filesystem layout is not supported by tuning.apply_host_tuners" >&2; exit 1; }
+trap 'rm -f /host/var/tmp/redpanda-tune.yaml' EXIT
+cp /host/redpanda_etc/redpanda.yaml /host/var/tmp/redpanda-tune.yaml
+grep -q 'data_directory:' /host/var/tmp/redpanda-tune.yaml || sed -i 's|^redpanda:|redpanda:\n  data_directory: /var/lib/redpanda/data|' /host/var/tmp/redpanda-tune.yaml
+chroot /host /bin/bash -c '
+  set -xeuo pipefail
+  export PATH="/opt/redpanda/bin:$PATH"
+  nsenter -t 1 -n /opt/redpanda/bin/rpk redpanda tune list --config /var/tmp/redpanda-tune.yaml
+  rc=0
+  nsenter -t 1 -n /opt/redpanda/bin/rpk redpanda tune all --config /var/tmp/redpanda-tune.yaml -v || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    echo "WARNING: rpk redpanda tune all exited $rc; at least one enabled tuner failed to apply (see output above). Not blocking broker startup over a single degraded tuner." >&2
+  fi
+  busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 \
+    org.freedesktop.systemd1.Manager TryRestartUnit ss "irqbalance.service" "replace" \
+    || true
+'
+`) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -215,9 +325,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_402_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $state $pool "set-datadir-ownership")))) "r") -}}
-{{- $uid := ((index $_402_uid_gid 0) | int64) -}}
-{{- $gid := ((index $_402_uid_gid 1) | int64) -}}
+{{- $_709_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $state $pool "set-datadir-ownership")))) "r") -}}
+{{- $uid := ((index $_709_uid_gid 0) | int64) -}}
+{{- $gid := ((index $_709_uid_gid 1) | int64) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "set-datadir-ownership" "image" (printf "%s:%s" $pool.Statefulset.initContainerImage.repository $pool.Statefulset.initContainerImage.tag) "command" (list `/bin/sh` `-c` (printf `chown %d:%d -R /var/lib/redpanda/data` $uid $gid)) "securityContext" (mustMergeOverwrite (dict) (dict "runAsUser" (0 | int64) "runAsGroup" (0 | int64))) "volumeMounts" (concat (default (list) (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $state)))) "r")) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" `datadir` "mountPath" `/var/lib/redpanda/data`))))))) | toJson -}}
 {{- break -}}
@@ -230,12 +340,12 @@
 {{- $containerName := (index .a 2) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_428_gid_uid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $state.Values.podTemplate "redpanda")))) "r") -}}
-{{- $gid := (index $_428_gid_uid 0) -}}
-{{- $uid := (index $_428_gid_uid 1) -}}
-{{- $_429_sgid_suid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $pool.Statefulset.podTemplate "redpanda")))) "r") -}}
-{{- $sgid := (index $_429_sgid_suid 0) -}}
-{{- $suid := (index $_429_sgid_suid 1) -}}
+{{- $_735_gid_uid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $state.Values.podTemplate "redpanda")))) "r") -}}
+{{- $gid := (index $_735_gid_uid 0) -}}
+{{- $uid := (index $_735_gid_uid 1) -}}
+{{- $_736_sgid_suid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $pool.Statefulset.podTemplate "redpanda")))) "r") -}}
+{{- $sgid := (index $_736_sgid_suid 0) -}}
+{{- $suid := (index $_736_sgid_suid 1) -}}
 {{- if (ne (toJson $sgid) "null") -}}
 {{- $gid = $sgid -}}
 {{- end -}}
@@ -312,9 +422,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_508_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $state $pool "set-tiered-storage-cache-dir-ownership")))) "r") -}}
-{{- $uid := ((index $_508_uid_gid 0) | int64) -}}
-{{- $gid := ((index $_508_uid_gid 1) | int64) -}}
+{{- $_815_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $state $pool "set-tiered-storage-cache-dir-ownership")))) "r") -}}
+{{- $uid := ((index $_815_uid_gid 0) | int64) -}}
+{{- $gid := ((index $_815_uid_gid 1) | int64) -}}
 {{- $cacheDir := (get (fromJson (include "redpanda.Storage.TieredCacheDirectory" (dict "a" (list $state.Values.storage $state)))) "r") -}}
 {{- $mounts := (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $state)))) "r") -}}
 {{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "datadir" "mountPath" "/var/lib/redpanda/data")))) -}}
@@ -341,7 +451,7 @@
 {{- $volMounts = (concat (default (list) $volMounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "kube-api-access" "mountPath" "/var/run/secrets/kubernetes.io/serviceaccount" "readOnly" true)))) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "redpanda-configurator" "image" (printf `%s:%s` $state.Values.image.repository (get (fromJson (include "redpanda.Tag" (dict "a" (list $state)))) "r")) "command" (list `/bin/bash` `-c` `trap "exit 0" TERM; exec $CONFIGURATOR_SCRIPT "${SERVICE_NAME}" "${KUBERNETES_NODE_NAME}" & wait $!`) "env" (get (fromJson (include "redpanda.rpkEnvVars" (dict "a" (list $state (list (mustMergeOverwrite (dict "name" "") (dict "name" "PATH" "value" "/opt/redpanda/bin:/busybox:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")) (mustMergeOverwrite (dict "name" "") (dict "name" "CONFIGURATOR_SCRIPT" "value" "/etc/secrets/configurator/scripts/configurator.sh")) (mustMergeOverwrite (dict "name" "") (dict "name" "SERVICE_NAME" "valueFrom" (mustMergeOverwrite (dict) (dict "fieldRef" (mustMergeOverwrite (dict "fieldPath" "") (dict "fieldPath" "metadata.name")) "resourceFieldRef" (coalesce nil) "configMapKeyRef" (coalesce nil) "secretKeyRef" (coalesce nil))))) (mustMergeOverwrite (dict "name" "") (dict "name" "KUBERNETES_NODE_NAME" "valueFrom" (mustMergeOverwrite (dict) (dict "fieldRef" (mustMergeOverwrite (dict "fieldPath" "") (dict "fieldPath" "spec.nodeName")))))) (mustMergeOverwrite (dict "name" "") (dict "name" "HOST_IP_ADDRESS" "valueFrom" (mustMergeOverwrite (dict) (dict "fieldRef" (mustMergeOverwrite (dict "fieldPath" "") (dict "apiVersion" "v1" "fieldPath" "status.hostIP"))))))))))) "r") "volumeMounts" $volMounts "securityContext" (mustMergeOverwrite (dict) (dict "runAsNonRoot" true "allowPrivilegeEscalation" false))))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "redpanda-configurator" "image" (printf `%s:%s` $state.Values.image.repository (get (fromJson (include "redpanda.Tag" (dict "a" (list $state)))) "r")) "command" (list `/bin/bash` `-c` `trap "exit 0" TERM; exec $CONFIGURATOR_SCRIPT "${SERVICE_NAME}" "${KUBERNETES_NODE_NAME}" & wait $!`) "env" (get (fromJson (include "redpanda.rpkEnvVars" (dict "a" (list $state (list (mustMergeOverwrite (dict "name" "") (dict "name" "CONFIGURATOR_SCRIPT" "value" "/etc/secrets/configurator/scripts/configurator.sh")) (mustMergeOverwrite (dict "name" "") (dict "name" "SERVICE_NAME" "valueFrom" (mustMergeOverwrite (dict) (dict "fieldRef" (mustMergeOverwrite (dict "fieldPath" "") (dict "fieldPath" "metadata.name")) "resourceFieldRef" (coalesce nil) "configMapKeyRef" (coalesce nil) "secretKeyRef" (coalesce nil))))) (mustMergeOverwrite (dict "name" "") (dict "name" "KUBERNETES_NODE_NAME" "valueFrom" (mustMergeOverwrite (dict) (dict "fieldRef" (mustMergeOverwrite (dict "fieldPath" "") (dict "fieldPath" "spec.nodeName")))))) (mustMergeOverwrite (dict "name" "") (dict "name" "HOST_IP_ADDRESS" "valueFrom" (mustMergeOverwrite (dict) (dict "fieldRef" (mustMergeOverwrite (dict "fieldPath" "") (dict "apiVersion" "v1" "fieldPath" "status.hostIP"))))))))))) "r") "volumeMounts" $volMounts "securityContext" (mustMergeOverwrite (dict) (dict "runAsNonRoot" true "allowPrivilegeEscalation" false))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -370,8 +480,9 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $wrapped := (join " " $cmd) -}}
+{{- $script := (printf (printf "%s%s" (printf "%s%s" (printf "%s%s" (printf "%s%s" (printf "%s%s" (printf "%s%s" (printf "%s%s" (printf "%s%s" (printf "%s%s" (printf "%s%s" `timeout -v %d %s 2>&1 | sed "s/^/lifecycle-hook %s $(date): /" | tee /proc/1/fd/1` "\n") `ec=${PIPESTATUS[0]}`) "\n") `if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then`) "\n") `  echo "lifecycle-hook %s $(date): TIMEOUT after %ds — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1`) "\n") `fi`) "\n") `true`) $timeoutSeconds $wrapped $hook $hook $timeoutSeconds) -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (list "/bin/bash" "-c" (printf "timeout -v %d %s 2>&1 | sed \"s/^/lifecycle-hook %s $(date): /\" | tee /proc/1/fd/1; true" $timeoutSeconds $wrapped $hook))) | toJson -}}
+{{- (dict "r" (list "/bin/bash" "-c" $script)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -382,7 +493,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $internalAdvertiseAddress := (printf "%s.%s" "$(SERVICE_NAME)" (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r")) -}}
-{{- $container := (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "redpanda" "image" (printf `%s:%s` $state.Values.image.repository (get (fromJson (include "redpanda.Tag" (dict "a" (list $state)))) "r")) "env" (concat (default (list) (get (fromJson (include "redpanda.bootstrapEnvVars" (dict "a" (list $state (get (fromJson (include "redpanda.statefulSetRedpandaEnv" (dict "a" (list)))) "r"))))) "r")) (default (list) (get (fromJson (include "redpanda.MetricsEnvironmentVariables" (dict "a" (list $state $pool)))) "r")) (list (mustMergeOverwrite (dict "name" "") (dict "name" "PATH" "value" "/opt/redpanda/bin:/busybox:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")))) "lifecycle" (mustMergeOverwrite (dict) (dict "postStart" (mustMergeOverwrite (dict) (dict "exec" (mustMergeOverwrite (dict) (dict "command" (get (fromJson (include "redpanda.wrapLifecycleHook" (dict "a" (list "post-start" ((div $pool.Statefulset.podTemplate.spec.terminationGracePeriodSeconds (2 | int64)) | int64) (list "/bin/bash" "-x" "/var/lifecycle/postStart.sh"))))) "r"))))) "preStop" (mustMergeOverwrite (dict) (dict "exec" (mustMergeOverwrite (dict) (dict "command" (get (fromJson (include "redpanda.wrapLifecycleHook" (dict "a" (list "pre-stop" ((div $pool.Statefulset.podTemplate.spec.terminationGracePeriodSeconds (2 | int64)) | int64) (list "/bin/bash" "-x" "/var/lifecycle/preStop.sh"))))) "r"))))))) "startupProbe" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "exec" (mustMergeOverwrite (dict) (dict "command" (list `/bin/bash` `-c` (join "\n" (list `set -e` (printf `wget --quiet --no-check-certificate -O /dev/null -T 5 "%s://%s/v1/status/ready"` (get (fromJson (include "redpanda.adminInternalHTTPProtocol" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.adminApiURLs" (dict "a" (list $state)))) "r")) ``))))))) (dict "failureThreshold" (120 | int) "initialDelaySeconds" (1 | int) "periodSeconds" (10 | int))) "livenessProbe" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "tcpSocket" (mustMergeOverwrite (dict "port" 0) (dict "port" ($state.Values.listeners.admin.port | int))))) (dict "failureThreshold" (3 | int) "initialDelaySeconds" (10 | int) "periodSeconds" (10 | int))) "command" (list `rpk` `redpanda` `start` (printf `--advertise-rpc-addr=%s:%d` $internalAdvertiseAddress ($state.Values.listeners.rpc.port | int))) "volumeMounts" (get (fromJson (include "redpanda.StatefulSetVolumeMounts" (dict "a" (list $state)))) "r") "resources" (get (fromJson (include "redpanda.RedpandaResources.GetResourceRequirements" (dict "a" (list $state.Values.resources)))) "r") "securityContext" (mustMergeOverwrite (dict) (dict "runAsNonRoot" true "allowPrivilegeEscalation" false)))) -}}
+{{- $container := (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "redpanda" "image" (printf `%s:%s` $state.Values.image.repository (get (fromJson (include "redpanda.Tag" (dict "a" (list $state)))) "r")) "env" (concat (default (list) (get (fromJson (include "redpanda.bootstrapEnvVars" (dict "a" (list $state (get (fromJson (include "redpanda.statefulSetRedpandaEnv" (dict "a" (list)))) "r"))))) "r")) (default (list) (get (fromJson (include "redpanda.MetricsEnvironmentVariables" (dict "a" (list $state $pool)))) "r"))) "lifecycle" (mustMergeOverwrite (dict) (dict "postStart" (mustMergeOverwrite (dict) (dict "exec" (mustMergeOverwrite (dict) (dict "command" (get (fromJson (include "redpanda.wrapLifecycleHook" (dict "a" (list "post-start" ((div $pool.Statefulset.podTemplate.spec.terminationGracePeriodSeconds (2 | int64)) | int64) (list "/bin/bash" "-x" "/var/lifecycle/postStart.sh"))))) "r"))))) "preStop" (mustMergeOverwrite (dict) (dict "exec" (mustMergeOverwrite (dict) (dict "command" (get (fromJson (include "redpanda.wrapLifecycleHook" (dict "a" (list "pre-stop" ((div $pool.Statefulset.podTemplate.spec.terminationGracePeriodSeconds (2 | int64)) | int64) (list "/bin/bash" "-x" "/var/lifecycle/preStop.sh"))))) "r"))))))) "startupProbe" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "exec" (mustMergeOverwrite (dict) (dict "command" (list `/bin/sh` `-c` (join "\n" (list `set -e` (printf `RESULT=$(curl --silent --fail -k -m 5 %s "%s://%s/v1/status/ready")` (get (fromJson (include "redpanda.adminTLSCurlFlags" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.adminInternalHTTPProtocol" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.adminApiURLs" (dict "a" (list $state)))) "r")) `echo $RESULT` `echo $RESULT | grep ready` ``))))))) (dict "failureThreshold" (120 | int) "initialDelaySeconds" (1 | int) "periodSeconds" (10 | int))) "livenessProbe" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "tcpSocket" (mustMergeOverwrite (dict "port" 0) (dict "port" ($state.Values.listeners.admin.port | int))))) (dict "failureThreshold" (3 | int) "initialDelaySeconds" (10 | int) "periodSeconds" (10 | int))) "command" (list `rpk` `redpanda` `start` (printf `--advertise-rpc-addr=%s:%d` $internalAdvertiseAddress ($state.Values.listeners.rpc.port | int))) "volumeMounts" (get (fromJson (include "redpanda.StatefulSetVolumeMounts" (dict "a" (list $state)))) "r") "resources" (get (fromJson (include "redpanda.RedpandaResources.GetResourceRequirements" (dict "a" (list $state.Values.resources)))) "r") "securityContext" (mustMergeOverwrite (dict) (dict "runAsNonRoot" true "allowPrivilegeEscalation" false)))) -}}
 {{- $_ := (set $container "ports" (concat (default (list) $container.ports) (list (mustMergeOverwrite (dict "containerPort" 0) (dict "name" "admin" "containerPort" ($state.Values.listeners.admin.port | int)))))) -}}
 {{- range $externalName, $external := $state.Values.listeners.admin.external -}}
 {{- if (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $external)))) "r") -}}
@@ -459,6 +570,9 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $args := (list `/redpanda-operator` `sidecar` `--redpanda-yaml` `/etc/redpanda/redpanda.yaml` `--redpanda-cluster-namespace` $state.Release.Namespace `--redpanda-cluster-name` (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") (printf "--selector=helm.sh/chart=%s,app.kubernetes.io/name=%s,app.kubernetes.io/instance=%s" (get (fromJson (include "redpanda.ChartLabel" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.Name" (dict "a" (list $state)))) "r") $state.Dot.Release.Name) `--run-broker-probe` `--broker-probe-broker-url` (get (fromJson (include "redpanda.adminURLsCLI" (dict "a" (list $state)))) "r")) -}}
+{{- if $pool.Statefulset.sideCars.rpkProfileWatcher.enabled -}}
+{{- $args = (concat (default (list) $args) (default (list) (list `--watch-rpk-profile` `--rpk-profile-source=/tmp/base-config/redpanda.yaml`))) -}}
+{{- end -}}
 {{- if $pool.Statefulset.sideCars.brokerDecommissioner.enabled -}}
 {{- $args = (concat (default (list) $args) (default (list) (list `--run-decommissioner` (printf "--decommission-vote-interval=%s" $pool.Statefulset.sideCars.brokerDecommissioner.decommissionAfter) (printf "--decommission-requeue-timeout=%s" $pool.Statefulset.sideCars.brokerDecommissioner.decommissionRequeueTimeout) `--decommission-vote-count=2`))) -}}
 {{- end -}}
@@ -468,11 +582,17 @@
 {{- end -}}
 {{- if $pool.Statefulset.sideCars.pvcUnbinder.enabled -}}
 {{- $args = (concat (default (list) $args) (default (list) (list `--run-pvc-unbinder` (printf "--pvc-unbinder-timeout=%s" $pool.Statefulset.sideCars.pvcUnbinder.unbindAfter)))) -}}
+{{- if $pool.Statefulset.sideCars.pvcUnbinder.disableStuckClaimExemption -}}
+{{- $args = (concat (default (list) $args) (list `--disable-pvc-rebinding-gate-exemption`)) -}}
+{{- end -}}
 {{- end -}}
 {{- $args = (concat (default (list) $args) (default (list) $pool.Statefulset.sideCars.args)) -}}
-{{- $volumeMounts := (concat (default (list) (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $state)))) "r")) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "config" "mountPath" "/etc/redpanda")) (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "kube-api-access" "mountPath" "/var/run/secrets/kubernetes.io/serviceaccount" "readOnly" true)))) -}}
+{{- $volumeMounts := (concat (default (list) (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $state)))) "r")) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "config" "mountPath" "/etc/redpanda")) (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "base-config" "mountPath" "/tmp/base-config" "readOnly" true)) (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "kube-api-access" "mountPath" "/var/run/secrets/kubernetes.io/serviceaccount" "readOnly" true)))) -}}
+{{- $_1236_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $state $pool "sidecar")))) "r") -}}
+{{- $uid := ((index $_1236_uid_gid 0) | int64) -}}
+{{- $gid := ((index $_1236_uid_gid 1) | int64) -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "sidecar" "image" (printf `%s:%s` $pool.Statefulset.sideCars.image.repository $pool.Statefulset.sideCars.image.tag) "command" (list `/redpanda-operator`) "args" (concat (default (list) (list `supervisor` `--`)) (default (list) $args)) "env" (concat (default (list) (get (fromJson (include "redpanda.rpkEnvVars" (dict "a" (list $state (coalesce nil))))) "r")) (default (list) (get (fromJson (include "redpanda.statefulSetRedpandaEnv" (dict "a" (list)))) "r"))) "volumeMounts" $volumeMounts "securityContext" (mustMergeOverwrite (dict) (dict "runAsNonRoot" true "allowPrivilegeEscalation" false)) "readinessProbe" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "httpGet" (mustMergeOverwrite (dict "port" 0) (dict "path" "/healthz" "port" (8093 | int))))) (dict "failureThreshold" (3 | int) "initialDelaySeconds" (1 | int) "periodSeconds" (10 | int) "successThreshold" (1 | int) "timeoutSeconds" (0 | int)))))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "sidecar" "image" (printf `%s:%s` $pool.Statefulset.sideCars.image.repository $pool.Statefulset.sideCars.image.tag) "command" (list `/redpanda-operator`) "args" (concat (default (list) (list `supervisor` `--`)) (default (list) $args)) "env" (concat (default (list) (get (fromJson (include "redpanda.rpkEnvVars" (dict "a" (list $state (coalesce nil))))) "r")) (default (list) (get (fromJson (include "redpanda.statefulSetRedpandaEnv" (dict "a" (list)))) "r"))) "volumeMounts" $volumeMounts "securityContext" (mustMergeOverwrite (dict) (dict "runAsUser" $uid "runAsGroup" $gid "runAsNonRoot" true "allowPrivilegeEscalation" false)) "readinessProbe" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "httpGet" (mustMergeOverwrite (dict "port" 0) (dict "path" "/healthz" "port" (8093 | int))))) (dict "failureThreshold" (3 | int) "initialDelaySeconds" (1 | int) "periodSeconds" (10 | int) "successThreshold" (1 | int) "timeoutSeconds" (0 | int)))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -513,7 +633,7 @@
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $sets := (list (get (fromJson (include "redpanda.StatefulSet" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Generation" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "") "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" "")) "ServiceAnnotations" (coalesce nil)) (dict "Statefulset" $state.Values.statefulset)))))) "r")) -}}
+{{- $sets := (list (get (fromJson (include "redpanda.StatefulSet" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Generation" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "" "disableStuckClaimExemption" false) "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "rpkProfileWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" "")) "ServiceAnnotations" (coalesce nil)) (dict "Statefulset" $state.Values.statefulset)))))) "r")) -}}
 {{- range $_, $set := $state.Pools -}}
 {{- $sets = (concat (default (list) $sets) (list (get (fromJson (include "redpanda.StatefulSet" (dict "a" (list $state $set)))) "r"))) -}}
 {{- end -}}
@@ -536,7 +656,7 @@
 {{- $_ := (set $poolLabels "cluster.redpanda.com/nodepool-name" $pool.Name) -}}
 {{- $_ := (set $poolLabels "cluster.redpanda.com/nodepool-generation" $pool.Generation) -}}
 {{- end -}}
-{{- $set := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "selector" (coalesce nil) "template" (dict "metadata" (dict) "spec" (dict "containers" (coalesce nil))) "serviceName" "" "updateStrategy" (dict)) "status" (dict "replicas" 0 "availableReplicas" 0)) (mustMergeOverwrite (dict) (dict "apiVersion" "apps/v1" "kind" "StatefulSet")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (printf "%s%s" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.Pool.Suffix" (dict "a" (list (deepCopy $pool))))) "r")) "namespace" $state.Release.Namespace "labels" (merge (dict) (dict "app.kubernetes.io/component" (printf "%s%s" (get (fromJson (include "redpanda.Name" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.Pool.Suffix" (dict "a" (list (deepCopy $pool))))) "r"))) $poolLabels (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r")))) "spec" (mustMergeOverwrite (dict "selector" (coalesce nil) "template" (dict "metadata" (dict) "spec" (dict "containers" (coalesce nil))) "serviceName" "" "updateStrategy" (dict)) (dict "selector" (mustMergeOverwrite (dict) (dict "matchLabels" (get (fromJson (include "redpanda.StatefulSetPodLabelsSelector" (dict "a" (list $state $pool)))) "r"))) "serviceName" (get (fromJson (include "redpanda.ServiceName" (dict "a" (list $state)))) "r") "replicas" ($pool.Statefulset.replicas | int) "updateStrategy" $pool.Statefulset.updateStrategy "podManagementPolicy" "Parallel" "template" (get (fromJson (include "redpanda.StrategicMergePatch" (dict "a" (list (get (fromJson (include "redpanda.StructuredTpl" (dict "a" (list $state $pool.Statefulset.podTemplate)))) "r") (get (fromJson (include "redpanda.StrategicMergePatch" (dict "a" (list (get (fromJson (include "redpanda.StructuredTpl" (dict "a" (list $state $state.Values.podTemplate)))) "r") (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "containers" (coalesce nil))) (dict "metadata" (mustMergeOverwrite (dict) (dict "labels" (get (fromJson (include "redpanda.StatefulSetPodLabels" (dict "a" (list $state $pool)))) "r") "annotations" (dict "config.redpanda.com/checksum" (get (fromJson (include "redpanda.statefulSetChecksumAnnotation" (dict "a" (list $state $pool)))) "r")))) "spec" (mustMergeOverwrite (dict "containers" (coalesce nil)) (dict "automountServiceAccountToken" false "serviceAccountName" (get (fromJson (include "redpanda.ServiceAccountName" (dict "a" (list $state)))) "r") "initContainers" (get (fromJson (include "redpanda.StatefulSetInitContainers" (dict "a" (list $state $pool)))) "r") "containers" (get (fromJson (include "redpanda.StatefulSetContainers" (dict "a" (list $state $pool)))) "r") "volumes" (get (fromJson (include "redpanda.StatefulSetVolumes" (dict "a" (list $state $pool)))) "r"))))))))) "r"))))) "r") "volumeClaimTemplates" (coalesce nil))))) -}}
+{{- $set := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "selector" (coalesce nil) "template" (dict "metadata" (dict) "spec" (dict "containers" (coalesce nil))) "serviceName" "" "updateStrategy" (dict)) "status" (dict "replicas" 0 "availableReplicas" 0)) (mustMergeOverwrite (dict) (dict "apiVersion" "apps/v1" "kind" "StatefulSet")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (printf "%s%s" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.Pool.Suffix" (dict "a" (list (deepCopy $pool))))) "r")) "namespace" $state.Release.Namespace "labels" (merge (dict) (dict "app.kubernetes.io/component" (printf "%s%s" (get (fromJson (include "redpanda.Name" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.Pool.Suffix" (dict "a" (list (deepCopy $pool))))) "r"))) $poolLabels (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r")))) "spec" (mustMergeOverwrite (dict "selector" (coalesce nil) "template" (dict "metadata" (dict) "spec" (dict "containers" (coalesce nil))) "serviceName" "" "updateStrategy" (dict)) (dict "selector" (mustMergeOverwrite (dict) (dict "matchLabels" (get (fromJson (include "redpanda.StatefulSetPodLabelsSelector" (dict "a" (list $state $pool)))) "r"))) "serviceName" (get (fromJson (include "redpanda.ServiceName" (dict "a" (list $state)))) "r") "replicas" ($pool.Statefulset.replicas | int) "updateStrategy" $pool.Statefulset.updateStrategy "persistentVolumeClaimRetentionPolicy" $pool.Statefulset.persistentVolumeClaimRetentionPolicy "podManagementPolicy" "Parallel" "template" (get (fromJson (include "redpanda.StrategicMergePatch" (dict "a" (list (get (fromJson (include "redpanda.StructuredTpl" (dict "a" (list $state $pool.Statefulset.podTemplate)))) "r") (get (fromJson (include "redpanda.StrategicMergePatch" (dict "a" (list (get (fromJson (include "redpanda.StructuredTpl" (dict "a" (list $state $state.Values.podTemplate)))) "r") (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "containers" (coalesce nil))) (dict "metadata" (mustMergeOverwrite (dict) (dict "labels" (get (fromJson (include "redpanda.StatefulSetPodLabels" (dict "a" (list $state $pool)))) "r") "annotations" (dict "config.redpanda.com/checksum" (get (fromJson (include "redpanda.statefulSetChecksumAnnotation" (dict "a" (list $state $pool)))) "r")))) "spec" (mustMergeOverwrite (dict "containers" (coalesce nil)) (dict "automountServiceAccountToken" false "serviceAccountName" (get (fromJson (include "redpanda.ServiceAccountName" (dict "a" (list $state)))) "r") "initContainers" (get (fromJson (include "redpanda.StatefulSetInitContainers" (dict "a" (list $state $pool)))) "r") "containers" (get (fromJson (include "redpanda.StatefulSetContainers" (dict "a" (list $state $pool)))) "r") "volumes" (get (fromJson (include "redpanda.StatefulSetVolumes" (dict "a" (list $state $pool)))) "r"))))))))) "r"))))) "r") "volumeClaimTemplates" (coalesce nil))))) -}}
 {{- if (or $state.Values.storage.persistentVolume.enabled ((and (get (fromJson (include "redpanda.Storage.IsTieredStorageEnabled" (dict "a" (list $state.Values.storage)))) "r") (eq (get (fromJson (include "redpanda.Storage.TieredMountType" (dict "a" (list $state.Values.storage)))) "r") "persistentVolume")))) -}}
 {{- $t_9 := (get (fromJson (include "redpanda.volumeClaimTemplateDatadir" (dict "a" (list $state)))) "r") -}}
 {{- if (ne (toJson $t_9) "null") -}}
