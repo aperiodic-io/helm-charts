@@ -4659,6 +4659,13 @@
         "type": {
           "pattern": "^(LoadBalancer|NodePort)$",
           "type": "string"
+        },
+        "trafficPolicy": {
+          "enum": [
+            "Cluster",
+            "Local"
+          ],
+          "type": "string"
         }
       },
       "required": [

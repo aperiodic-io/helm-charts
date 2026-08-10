@@ -271,6 +271,10 @@ external:
   # Warning: If you use LoadBalancers, you will likely experience higher latency and increased packet loss.
   # NodePort is recommended in cases where latency is a priority.
   type: NodePort
+  # -- Traffic policy for chart-managed external Services. Local preserves the
+  # client source address; Cluster permits any Service target node to forward
+  # traffic to the selected broker Pod.
+  trafficPolicy: Local
   # Optional source range for external access. Only applicable when external.type is LoadBalancer
   # sourceRanges: []
   # -- Optional domain advertised to external clients
