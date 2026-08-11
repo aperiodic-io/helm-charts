@@ -23,7 +23,7 @@ entries:
       artifacthub.io/operatorCapabilities: Seamless Upgrades
     apiVersion: v2
     appVersion: v26.1.4
-    created: "2026-08-10T21:49:34.554096929Z"
+    created: "2026-08-11T10:50:19.872695956Z"
     description: Redpanda operator helm chart
     digest: 2d89eb2ac8ff8fdb1205d4366dc1a90e91301240214bfc643bd3e4a2c019efff
     icon: https://go.redpanda.com/hubfs/Redpandas/operator-panda.png
@@ -53,7 +53,41 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.2.1
-    created: "2026-08-10T21:49:34.764447268Z"
+    created: "2026-08-11T10:50:20.153039698Z"
+    dependencies:
+    - condition: console.enabled
+      name: console
+      repository: file://../../console/chart
+      version: '>=3.9.0-0'
+    description: Redpanda is the real-time engine for modern apps.
+    digest: 327ce3910a4f6754afaef2ee9f15aed64a7dbd0a2d7d4b23e98751d1858205a5
+    icon: https://go.redpanda.com/hubfs/Redpandas/skate-stand-panda.svg
+    kubeVersion: '>= 1.25.0-0'
+    maintainers:
+    - name: redpanda-data
+      url: https://github.com/orgs/redpanda-data/people
+    name: redpanda
+    sources:
+    - https://github.com/redpanda-data/redpanda-operator/tree/main/charts/redpanda
+    type: application
+    urls:
+    - https://raw.githubusercontent.com/aperiodic-io/helm-charts/main/redpanda-26.2.1-aperiodic.3.tgz
+    version: 26.2.1-aperiodic.3
+  - annotations:
+      artifacthub.io/images: |
+        - name: redpanda
+          image: docker.redpanda.com/redpandadata/redpanda:v26.2.1
+        - name: busybox
+          image: busybox:latest
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/links: |
+        - name: Documentation
+          url: https://docs.redpanda.com
+        - name: "Helm (>= 3.10.0)"
+          url: https://helm.sh/docs/intro/install/
+    apiVersion: v2
+    appVersion: v26.2.1
+    created: "2026-08-11T10:50:20.14141968Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -87,7 +121,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.2.1
-    created: "2026-08-10T21:49:34.750477094Z"
+    created: "2026-08-11T10:50:20.129749636Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -121,7 +155,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8-patched-v2
-    created: "2026-08-10T21:49:34.649316037Z"
+    created: "2026-08-11T10:50:20.005437984Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -155,7 +189,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-08-10T21:49:34.643942883Z"
+    created: "2026-08-11T10:50:19.994417336Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -189,7 +223,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-08-10T21:49:34.638029055Z"
+    created: "2026-08-11T10:50:19.982776016Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -223,7 +257,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-08-10T21:49:34.631413063Z"
+    created: "2026-08-11T10:50:19.971094685Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -257,7 +291,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-08-10T21:49:34.625100147Z"
+    created: "2026-08-11T10:50:19.960254899Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -291,7 +325,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-08-10T21:49:34.616076917Z"
+    created: "2026-08-11T10:50:19.948060277Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -325,7 +359,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8-patched
-    created: "2026-08-10T21:49:34.607562523Z"
+    created: "2026-08-11T10:50:19.936014469Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -359,7 +393,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8-patched
-    created: "2026-08-10T21:49:34.598943161Z"
+    created: "2026-08-11T10:50:19.923573908Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -393,7 +427,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8-patched
-    created: "2026-08-10T21:49:34.582902716Z"
+    created: "2026-08-11T10:50:19.913617558Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -427,7 +461,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8-patched
-    created: "2026-08-10T21:49:34.576968849Z"
+    created: "2026-08-11T10:50:19.899696273Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -461,7 +495,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8-patched
-    created: "2026-08-10T21:49:34.568845031Z"
+    created: "2026-08-11T10:50:19.886598784Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -495,7 +529,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8-patched
-    created: "2026-08-10T21:49:34.741113444Z"
+    created: "2026-08-11T10:50:20.117004707Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -529,7 +563,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8-patched
-    created: "2026-08-10T21:49:34.733560113Z"
+    created: "2026-08-11T10:50:20.100107409Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -563,7 +597,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8-patched
-    created: "2026-08-10T21:49:34.722408445Z"
+    created: "2026-08-11T10:50:20.08790799Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -597,7 +631,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8-patched
-    created: "2026-08-10T21:49:34.71400062Z"
+    created: "2026-08-11T10:50:20.075593959Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -631,41 +665,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-08-10T21:49:34.777996799Z"
-    dependencies:
-    - condition: console.enabled
-      name: console
-      repository: file://../../console/chart
-      version: '>=3.7.0-1'
-    description: Redpanda is the real-time engine for modern apps.
-    digest: b32278239024f656eb99c4902c387378eec71ab483fcadb9ce18b246208266f3
-    icon: https://go.redpanda.com/hubfs/Redpandas/skate-stand-panda.svg
-    kubeVersion: '>= 1.25.0-0'
-    maintainers:
-    - name: redpanda-data
-      url: https://github.com/orgs/redpanda-data/people
-    name: redpanda
-    sources:
-    - https://github.com/redpanda-data/redpanda-operator/tree/main/charts/redpanda
-    type: application
-    urls:
-    - https://raw.githubusercontent.com/aperiodic-io/helm-charts/main/charts-patched/redpanda-26.1.5.tgz
-    version: 26.1.5
-  - annotations:
-      artifacthub.io/images: |
-        - name: redpanda
-          image: docker.redpanda.com/redpandadata/redpanda:v26.1.8
-        - name: busybox
-          image: busybox:latest
-      artifacthub.io/license: Apache-2.0
-      artifacthub.io/links: |
-        - name: Documentation
-          url: https://docs.redpanda.com
-        - name: "Helm (>= 3.10.0)"
-          url: https://helm.sh/docs/intro/install/
-    apiVersion: v2
-    appVersion: v26.1.8
-    created: "2026-08-10T21:49:34.705195028Z"
+    created: "2026-08-11T10:50:20.064426361Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -699,14 +699,14 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-08-10T21:49:34.662227539Z"
+    created: "2026-08-11T10:50:20.165260639Z"
     dependencies:
     - condition: console.enabled
       name: console
       repository: file://../../console/chart
       version: '>=3.7.0-1'
     description: Redpanda is the real-time engine for modern apps.
-    digest: fd4c5ebf6f775d37973ad95c94d925b9752686d788cb3ef1a992aaaa358e9394
+    digest: b32278239024f656eb99c4902c387378eec71ab483fcadb9ce18b246208266f3
     icon: https://go.redpanda.com/hubfs/Redpandas/skate-stand-panda.svg
     kubeVersion: '>= 1.25.0-0'
     maintainers:
@@ -717,8 +717,8 @@ entries:
     - https://github.com/redpanda-data/redpanda-operator/tree/main/charts/redpanda
     type: application
     urls:
-    - https://raw.githubusercontent.com/aperiodic-io/helm-charts/main/redpanda-26.1.4-fixed.tgz
-    version: 26.1.4
+    - https://raw.githubusercontent.com/aperiodic-io/helm-charts/main/charts-patched/redpanda-26.1.5.tgz
+    version: 26.1.5
   - annotations:
       artifacthub.io/images: |
         - name: redpanda
@@ -733,7 +733,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-08-10T21:49:34.692797258Z"
+    created: "2026-08-11T10:50:20.051476955Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -767,7 +767,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-08-10T21:49:34.680327599Z"
+    created: "2026-08-11T10:50:20.038201279Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -801,7 +801,7 @@ entries:
           url: https://helm.sh/docs/intro/install/
     apiVersion: v2
     appVersion: v26.1.8
-    created: "2026-08-10T21:49:34.671293223Z"
+    created: "2026-08-11T10:50:20.025960849Z"
     dependencies:
     - condition: console.enabled
       name: console
@@ -821,4 +821,38 @@ entries:
     urls:
     - https://raw.githubusercontent.com/aperiodic-io/helm-charts/main/redpanda-26.1.4-patched.tgz
     version: 26.1.4
-generated: "2026-08-10T21:49:34.550057498Z"
+  - annotations:
+      artifacthub.io/images: |
+        - name: redpanda
+          image: docker.redpanda.com/redpandadata/redpanda:v26.1.8
+        - name: busybox
+          image: busybox:latest
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/links: |
+        - name: Documentation
+          url: https://docs.redpanda.com
+        - name: "Helm (>= 3.10.0)"
+          url: https://helm.sh/docs/intro/install/
+    apiVersion: v2
+    appVersion: v26.1.8
+    created: "2026-08-11T10:50:20.016084369Z"
+    dependencies:
+    - condition: console.enabled
+      name: console
+      repository: file://../../console/chart
+      version: '>=3.7.0-1'
+    description: Redpanda is the real-time engine for modern apps.
+    digest: fd4c5ebf6f775d37973ad95c94d925b9752686d788cb3ef1a992aaaa358e9394
+    icon: https://go.redpanda.com/hubfs/Redpandas/skate-stand-panda.svg
+    kubeVersion: '>= 1.25.0-0'
+    maintainers:
+    - name: redpanda-data
+      url: https://github.com/orgs/redpanda-data/people
+    name: redpanda
+    sources:
+    - https://github.com/redpanda-data/redpanda-operator/tree/main/charts/redpanda
+    type: application
+    urls:
+    - https://raw.githubusercontent.com/aperiodic-io/helm-charts/main/redpanda-26.1.4-fixed.tgz
+    version: 26.1.4
+generated: "2026-08-11T10:50:19.869048196Z"
