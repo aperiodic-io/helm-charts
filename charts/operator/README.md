@@ -3,7 +3,7 @@
 description: Find the default values and descriptions of settings in the Redpanda Operator Helm chart.
 ---
 
-![Version: 26.1.4](https://img.shields.io/badge/Version-26.1.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v26.1.4](https://img.shields.io/badge/AppVersion-v26.1.4-informational?style=flat-square)
+![Version: 26.1.10](https://img.shields.io/badge/Version-26.1.10-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v26.1.10](https://img.shields.io/badge/AppVersion-v26.1.10-informational?style=flat-square)
 
 This page describes the official Redpanda Operator Helm Chart. In particular, this page describes the contents of the chart’s [`values.yaml` file](./values.yaml). Each of the settings is listed and described on this page, along with any default values.
 
@@ -271,6 +271,12 @@ A subset of Kubernetes' PodSpec type that will be merged into the final PodSpec.
 ```
 {"containers":[{"name":"manager","resources":{}}],"securityContext":{"runAsUser":65532}}
 ```
+
+### [priorityClassName](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=priorityClassName)
+
+PriorityClassName assigned to the Redpanda Operator Pods. Set this to a higher-priority PriorityClass so the operator is less likely to be preempted when the cluster is under resource pressure. Empty by default (uses the cluster's global default PriorityClass, if any). For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/).
+
+**Default:** `""`
 
 ### [rbac](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=rbac)
 

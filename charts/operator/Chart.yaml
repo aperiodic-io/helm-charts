@@ -7,9 +7,9 @@ annotations:
       description: Define a Redpanda cluster
   artifacthub.io/images: |
     - name: redpanda-operator
-      image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.4
+      image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.10
     - name: redpanda
-      image: docker.redpanda.com/redpandadata/redpanda:v26.1.6
+      image: docker.redpanda.com/redpandadata/redpanda:v26.1.14
   artifacthub.io/license: Apache-2.0
   artifacthub.io/links: |
     - name: Documentation
@@ -19,7 +19,7 @@ annotations:
   artifacthub.io/operator: "true"
   artifacthub.io/operatorCapabilities: Seamless Upgrades
 apiVersion: v2
-appVersion: v26.1.4
+appVersion: v26.1.10
 description: Redpanda operator helm chart
 icon: https://go.redpanda.com/hubfs/Redpandas/operator-panda.png
 kubeVersion: '>= 1.25.0-0'
@@ -30,4 +30,4 @@ name: operator
 sources:
 - https://github.com/redpanda-data/redpanda-operator/tree/main/operator/chart
 type: application
-version: 26.1.4
+version: 26.1.10
